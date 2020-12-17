@@ -1,0 +1,10 @@
+name: test
+title:
+username:
+account: pngo5
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3347559
+bundleId: 4002536
+url: https://pngo5.shinyapps.io/test/
+when: 1608230376.65487
