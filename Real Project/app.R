@@ -250,12 +250,14 @@ ui={ page<-navbarPage(
                                tabPanel("Most Deaths",
                                         h3("Top 5 countries with the most deaths"),
                                         plotOutput("Q1"),
+                                        downloadButton('downloadPlot','Download')
                                        #h3("US first recovered case"),
                                         #verbatimTextOutput("Q5")
                                         ),
                                tabPanel("Confirmed Case",
                                         h3("Monthly trend of confirmed case in Georgia"),
-                                        plotOutput("Q3"))
+                                        plotOutput("Q3"),
+                                        downloadButton('downloadPlot2','Download'))
                           
 
                         )
@@ -264,15 +266,19 @@ ui={ page<-navbarPage(
                       tabPanel("Table",icon =icon("table"),
                                tabsetPanel(
                                  tabPanel("US States",
-                    
                                         h3("US States with > 1000 cases in Jun 2020"),
-                                        dataTableOutput("Q2"), br(),
-                                        downloadButton('downloadData', 'Download data')),
-                                 
+                                        DT::dataTableOutput("table_out")),
+                                        #dataTableOutput("Q2"), br(),
+                                        #downloadButton('downloadData', 'cvs'),
+                                        #actionButton('downloadDatapdf', 'pdf')),
+                                      
+                                       
+                                
                                    tabPanel("Recovery Rate",   
                                         h3("Countries with the highest recovery rate"),
-                                        dataTableOutput("Q4"), br(),
-                                        downloadButton('downloadData2', 'Download data'))
+                                        DT::dataTableOutput("table_out2"))
+                                        #dataTableOutput("Q4"), br(),
+                                        #downloadButton('downloadData2', 'Download data'))
                                         
                                         
                                  )
@@ -321,17 +327,17 @@ ui={ page<-navbarPage(
                             )
                         )
 
-)
+                    )
 
-page[[3]][[1]]$children[[1]]$children[[2]]$children[[1]]$children[[1]] <- 
-  tags$li(tags$a(target="_blank",
-    href = 'http://google.com', 
-    icon("github-square"),
-    "Github"
-  )
-  )
-                    
- page
+                        page[[3]][[1]]$children[[1]]$children[[2]]$children[[1]]$children[[1]] <- 
+                          tags$li(tags$a(target="_blank",
+                            href = 'http://google.com', 
+                            icon("github-square"),
+                            "Github"
+                          )
+                    )
+                                                
+          page
 
 }
 
@@ -778,7 +784,80 @@ server <- function(input, output, session) {
       content = function(file) {
         write.csv(datasetInput(), file)
       })
+    #pdf
+    output$downloadDatapdf <- downloadHandler(
+      filename = function() { 
+        paste("US_States_in_Jun_2020", Sys.Date(), ".pdf", sep="")
+      },
+      content = function(file) {
+        write.pdf(datasetInput(), file)
+      })
+ #----------------------------------Downloading however using datatable instead of manual download
+    output$table_out  <- DT::renderDataTable(
+      datatable(
+        datasetInput(),
+        rownames = TRUE,
+        options = list(
+          fixedColumns = TRUE,
+          autoWidth = TRUE,
+          ordering = FALSE,
+          dom = 'Btlfipr',
+          buttons = c('copy', 'csv', 'excel', 'pdf','print')
+        ),
+        class = "display", #if you want to modify via .css
+        extensions = "Buttons"
+      ))
+    
+#--------------------------------------------------------------Pictures
+    data<- reactive({
+      global_df0 %>% 
+        group_by(region) %>% 
+        summarize(death = max(death)) %>% 
+        arrange(desc(death)) %>% 
+        top_n(5) %>% 
+        ggplot(aes(x = reorder(region, -death, sum), y = death)) + geom_col(fill = "#ffc04d") + xlab("countries") + scale_y_continuous(labels = comma_format(big.mark = ","))
+    })
+    
+    output$downloadPlot <- downloadHandler(
+      filename = function() { paste(data(), '.png', sep='') },
+      content = function(file) {
+        ggsave(file, plot = data(), device = "png")
+      }
+    )
+  
+#--------------------------------------------------------second graph
+    
+    data2<- reactive({
+      confirmed_us_df %>% 
+        mutate(month = month(date)) %>% 
+        filter(region == "US" & sub_region == "Georgia") %>% 
+        group_by(month) %>% 
+        summarize(
+          confirmed = max(confirmed)
+        ) %>% 
+        ggplot(aes(x = month, y = confirmed)) + geom_point(size = 2) + geom_line(size = 1) + scale_y_continuous(labels = comma_format(big.mark = ","))
 
+    })
+
+    output$downloadPlot2 <- downloadHandler(
+      filename = function() { paste(data2(), '.png', sep='') },
+      content = function(file) {
+        ggsave(file, plot = data2(), device = "png")
+      }
+    )
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
   #------------------------------------------------
  #Download logic part 2   
     datasetInput2 <- reactive({
@@ -797,8 +876,23 @@ server <- function(input, output, session) {
       content = function(file) {
         write.csv(datasetInput2(), file)
       })
-  #-------------------------------------------------
     
+    
+    output$table_out2  <- DT::renderDataTable(
+      datatable(
+        datasetInput2(),
+        rownames = TRUE,
+        options = list(
+          fixedColumns = TRUE,
+          autoWidth = TRUE,
+          ordering = FALSE,
+          dom = 'Btlfipr',
+          buttons = c('copy', 'csv', 'excel', 'pdf','print')
+        ),
+        class = "display", #if you want to modify via .css
+        extensions = "Buttons"
+      ))
+  #-------------------------------------------------
     
     
     
