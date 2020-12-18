@@ -436,9 +436,9 @@ server <- function(input, output, session) {
             filter(region == "US") %>% 
             filter(date == as.Date("2020-05-31") | date == as.Date("2020-06-30")) %>% 
             group_by(sub_region) %>% 
-            summarize(new_confirmed = max(confirmed) - min(confirmed)) %>%
-            arrange(desc(new_confirmed)) %>% 
-            filter(new_confirmed > 1000)
+            summarize(Confirmed = max(confirmed) - min(confirmed)) %>%
+            arrange(desc(Confirmed)) %>% 
+            filter(Confirmed > 1000)
     })
     
     # "Q3. Monthly trend of confirmed case in Georgia",
@@ -459,8 +459,8 @@ server <- function(input, output, session) {
             filter(date == max(global_df0$date)) %>% 
             filter(confirmed > 1000000) %>% 
             group_by(region) %>% 
-            summarize(recovery_rate = round(recovered/confirmed, 2)) %>% 
-            arrange(desc(recovery_rate)) 
+            summarize(recovery = round(recovered/confirmed, 2)) %>% 
+            arrange(desc(recovery)) 
     })
     
     # "Q5. US first recovered case",
@@ -914,8 +914,8 @@ server <- function(input, output, session) {
         filter(date == max(global_df0$date)) %>% 
         filter(confirmed > 1000000) %>% 
         group_by(region) %>% 
-        summarize(recovery_rate = round(recovered/confirmed, 2)) %>% 
-        arrange(desc(recovery_rate)) 
+        summarize(recovery = round(recovered/confirmed, 2)) %>% 
+        arrange(desc(recovery)) 
     }) 
     
     output$downloadData2 <- downloadHandler(
