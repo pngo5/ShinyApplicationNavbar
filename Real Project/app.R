@@ -237,9 +237,12 @@ ui={ page<-navbarPage(
                      ), br(),
                      # verbatimTextOutput("text"),
                      h3("Number of confirmed, recovered and death cases"),
-                     dataTableOutput("table"), br(),
+                     DT::dataTableOutput("tabledownload"),
+                     #dataTableOutput("table"), br(),
                      h3("Top 5 region with confirmed case"),
-                     plotOutput("plot")#,
+                     plotOutput("plot"),
+                     downloadButton('imagedownloadinteractive','Download')
+                     
                      # plotOutput("distPlot")
                  )
              )
@@ -331,7 +334,7 @@ ui={ page<-navbarPage(
 
                         page[[3]][[1]]$children[[1]]$children[[2]]$children[[1]]$children[[1]] <- 
                           tags$li(tags$a(target="_blank",
-                            href = 'http://google.com', 
+                            href = 'https://github.com/pngo5/ShinyApplicationNavbar', 
                             icon("github-square"),
                             "Github"
                           )
@@ -389,7 +392,7 @@ server <- function(input, output, session) {
         global_df <- global_df()
         format(sum(global_df$death[global_df$date == max(global_df$date)], na.rm = T), big.mark = ",")
     })
-    
+
     output$table <- renderDataTable({
         global_df <- global_df()
         global_df %>%
@@ -399,6 +402,11 @@ server <- function(input, output, session) {
                       death = max(death)) %>% 
             arrange(region)
     })
+    
+    
+    
+    
+    
     
     output$plot <- renderPlot({
         global_df <- global_df()
@@ -845,11 +853,52 @@ server <- function(input, output, session) {
         ggsave(file, plot = data2(), device = "png")
       }
     )
+#------------------------------------------------------------------------------------interactive table
+    tabledownload<-  reactive({
+      global_df <- global_df()
+      global_df %>%
+        group_by(sub_region, region) %>%
+        summarize(confirmed = max(confirmed),
+                  recovered = max(recovered),
+                  death = max(death)) %>% 
+        arrange(region)
+    })
     
     
     
+    output$tabledownload  <- DT::renderDataTable(
+      datatable(
+        tabledownload(),
+        rownames = TRUE,
+        options = list(
+          fixedColumns = TRUE,
+          autoWidth = TRUE,
+          ordering = FALSE,
+          dom = 'Btlfipr',
+          buttons = c('copy', 'csv', 'excel', 'pdf','print')
+        ),
+        class = "display", #if you want to modify via .css
+        extensions = "Buttons"
+      ))
     
+#----------------------------------------------------------------------------------Interactive images at the bottom
     
+    imagedownload<-  reactive({
+      global_df <- global_df()
+      global_df %>% 
+        group_by(region) %>%
+        summarize(confirmed = max(confirmed)) %>% 
+        arrange(desc(confirmed)) %>% 
+        top_n(5) %>% 
+        ggplot(aes(x = reorder(region, -confirmed, sum), y = confirmed)) + geom_col(fill = "#ffc04d") + xlab("region") + scale_y_continuous(labels = comma_format(big.mark = ","))
+    })
+    
+    output$imagedownloadinteractive <- downloadHandler(
+      filename = function() { paste(imagedownload(), '.png', sep='') },
+      content = function(file) {
+        ggsave(file, plot = imagedownload(), device = "png")
+      }
+    )
     
     
 
