@@ -436,9 +436,9 @@ server <- function(input, output, session) {
             filter(region == "US") %>% 
             filter(date == as.Date("2020-05-31") | date == as.Date("2020-06-30")) %>% 
             group_by(sub_region) %>% 
-            summarize(Confirmed = max(confirmed) - min(confirmed)) %>%
-            arrange(desc(Confirmed)) %>% 
-            filter(Confirmed > 1000)
+            summarize(new_confirmed = max(confirmed) - min(confirmed)) %>%
+            arrange(desc(new_confirmed)) %>% 
+            filter(new_confirmed > 1000)
     })
     
     # "Q3. Monthly trend of confirmed case in Georgia",
